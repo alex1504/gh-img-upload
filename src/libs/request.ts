@@ -1,6 +1,16 @@
+import { AxiosResponse } from "axios";
+
 export const isBrowserEnv = typeof window !== "undefined";
 
-export function request(url: string, options?: any): Promise<any> {
+export type IRequestOptions = {
+  method: string;
+  data: string | Buffer;
+  headers: {
+    [key: string]: string;
+  };
+};
+
+export function request<T>(url: string, options: IRequestOptions): Promise<T> {
   return new Promise((resolve, reject) => {
     if (typeof XMLHttpRequest !== "undefined") {
       const xhr = new XMLHttpRequest();
@@ -24,7 +34,7 @@ export function request(url: string, options?: any): Promise<any> {
     } else {
       try {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        require("axios")(url, options).then((res: any) => {
+        require("axios")(url, options).then((res: AxiosResponse<T>) => {
           resolve(res.data);
         });
       } catch (e) {

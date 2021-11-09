@@ -15,6 +15,37 @@ export type IOptions = {
   owner: string;
   repos: string;
   dir?: string;
+  branch?: string;
+};
+
+export type IUploadResponse = {
+  commit: {
+    author: {
+      date: string;
+      email: string;
+      name: string;
+    };
+    committer: unknown;
+    html_url: string;
+    message: string;
+    node_id: string;
+    parents: unknown;
+    sha: string;
+    tree: unknown;
+    url: string;
+    verification: unknown;
+  };
+  content: {
+    download_url: string;
+    git_url: string;
+    html_url: string;
+    name: string;
+    path: string;
+    sha: string;
+    size: number;
+    type: string;
+    url: string;
+  };
 };
 
 export class GhImgUploader {
@@ -22,12 +53,14 @@ export class GhImgUploader {
   public owner;
   public repos;
   public dir;
+  public branch;
 
   constructor(options: IOptions) {
     this.token = options.token;
     this.owner = options.owner;
     this.repos = options.repos;
     this.dir = options.dir ? options.dir : "";
+    this.branch = options.branch ? options.branch : "master";
   }
 
   private _getPayload(data: IUploadPayload): string | Buffer {
@@ -36,8 +69,17 @@ export class GhImgUploader {
       : Buffer.from(JSON.stringify(data));
   }
 
-  private getMd5() {
-    return md5(Math.floor(Math.random() * Math.pow(10, 9) + Date.now()));
+  private getMd5(filename: string) {
+    return md5(
+      String(Math.floor(Math.random() * Math.pow(10, 9) + Date.now())) +
+        filename
+    );
+  }
+
+  public setBranch(branch: string) {
+    this.branch = branch;
+
+    return this;
   }
 
   public async upload(
@@ -46,16 +88,16 @@ export class GhImgUploader {
     isHashFilename = false
   ) {
     const targetFilename = isHashFilename
-      ? `${this.getMd5()}-${filename}`
+      ? `${this.getMd5(filename)}-${filename}`
       : filename;
 
     const data = {
-      message: "Upload pictures via github-image-upload",
-      branch: "master",
+      message: "Upload pictures via github-image-uploader",
+      branch: this.branch,
       content: base64Img
     };
 
-    const res = await request(
+    const res = await request<IUploadResponse>(
       `${githubBaseURL}/repos/${this.owner}/${this.repos}/contents/${this.dir}${targetFilename}`,
       {
         method: "PUT",
