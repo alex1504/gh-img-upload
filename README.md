@@ -13,7 +13,7 @@ npm i github-image-uploader
 ## with cdn
 
 ```js
-<script src="https://cdn.jsdelivr.net/npm/github-image-uploader/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/github-image-uploader@latest/dist/index.min.js"></script>
 ```
 
 # Usage
