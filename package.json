@@ -1,6 +1,6 @@
 {
   "name": "github-image-uploader",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Upload image to github by token in nodejs or browser environment",
   "repository": {
     "type": "git",
