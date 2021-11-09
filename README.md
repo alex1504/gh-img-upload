@@ -7,17 +7,19 @@ Upload base64 image to github by token compatible with nodejs and browser enviro
 ## with npm
 
 ```
-npm i GhImgUploader
+npm i github-image-uploader
 ```
 
 ## with cdn
 
-todo
+```
+<script src="https://cdn.jsdelivr.net/npm/github-image-uploader/dist/index.min.js"></script>
+```
 
 # Usage
 
 ```
-const { GhImgUploader } = require("GhImgUploader");
+const { GhImgUploader } = require("github-image-uploader");
 
 const uploader = new GhImgUploader({
   token: "",
