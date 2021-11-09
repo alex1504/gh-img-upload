@@ -35,18 +35,27 @@ export type IUploadResponse = {
     url: string;
     verification: unknown;
   };
-  content: {
-    download_url: string;
-    git_url: string;
-    html_url: string;
-    name: string;
-    path: string;
-    sha: string;
-    size: number;
-    type: string;
-    url: string;
-  };
+  content: IResponseContent;
 };
+
+export type IResponseContent = {
+  download_url: string;
+  git_url: string;
+  html_url: string;
+  name: string;
+  path: string;
+  sha: string;
+  size: number;
+  type: string;
+  url: string;
+};
+
+export enum ExternalLinkType {
+  gh = "GITHUB",
+  md_gh = "MARKDOWN_GITHUB",
+  cdn = "CDN",
+  md_cdn = "MARKDOWN_CDN"
+}
 
 export class GhImgUploader {
   public token;
@@ -63,13 +72,40 @@ export class GhImgUploader {
     this.branch = options.branch ? options.branch : "master";
   }
 
+  private getHandleFilename(filename: string) {
+    const splitIndex = filename.indexOf(".");
+    return filename.substr(0, splitIndex);
+  }
+
+  private generateExternalLink(
+    type: ExternalLinkType,
+    content: IResponseContent
+  ) {
+    const ghLink: string = decodeURI(content.download_url);
+    const cdnLink = `https://cdn.jsdelivr.net/gh/${this.owner}/${this.repos}@${this.branch}/${content.path}`;
+
+    switch (type) {
+      case ExternalLinkType.gh:
+        return ghLink;
+
+      case ExternalLinkType.md_gh:
+        return `![${this.getHandleFilename(content.name)}](${ghLink})`;
+
+      case ExternalLinkType.cdn:
+        return cdnLink;
+
+      case ExternalLinkType.md_cdn:
+        return `![${this.getHandleFilename(content.name)}](${cdnLink})`;
+    }
+  }
+
   private _getPayload(data: IUploadPayload): string | Buffer {
     return isBrowserEnv
       ? JSON.stringify(data)
       : Buffer.from(JSON.stringify(data));
   }
 
-  private getMd5(filename: string) {
+  private getMd5(filename: string): string {
     return md5(
       String(Math.floor(Math.random() * Math.pow(10, 9) + Date.now())) +
         filename
@@ -109,6 +145,15 @@ export class GhImgUploader {
       }
     );
 
-    return res;
+    const content = res.content;
+    const uploadRes = {
+      raw: res,
+      ghLink: this.generateExternalLink(ExternalLinkType.gh, content),
+      mdGh: this.generateExternalLink(ExternalLinkType.md_gh, content),
+      cdnLink: this.generateExternalLink(ExternalLinkType.cdn, content),
+      mdCdn: this.generateExternalLink(ExternalLinkType.md_cdn, content)
+    };
+
+    return uploadRes;
   }
 }
