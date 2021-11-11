@@ -18,35 +18,56 @@ npm i github-image-uploader
 
 # Usage
 
-```js
+```typescript
 const { GhImgUploader } = require("github-image-uploader");
 
-// Full options
-const uploader = new GhImgUploader({
-  token: "",
-  owner: "",
-  repos: "",
-  dir: "/",
-  branch: "master"
-});
-
-uploader.upload([base64Img], [filename], [isPrefixWithHash]);
+const uploader = new GhImgUploader(options: IOptions);
+uploader.upload(uploadOptions: IUploadOptions);
 ```
 
-# ConstructorOption description
+# IOptions
 
-| Key    | Type   | Default | Description                                          |
-| ------ | ------ | ------- | ---------------------------------------------------- |
-| token  | string |         | required, github token                               |
-| owner  | string |         | required, github username                            |
-| repos  | string |         | required, github repos name                          |
-| dir    | string | /       | optional, upload directory, by default is root dir   |
-| branch | string | master  | optional, upload branch, by default is master branch |
+```typescript
+export type IOptions = {
+  token: string;
+  owner: string;
+  repos: string;
+  dir?: string;
+  branch?: string;
+};
+```
 
-# UploadOption description
+| Key    | Type   | Default | Description                                                       |
+| ------ | ------ | ------- | ----------------------------------------------------------------- |
+| token  | string |         | required, github token                                            |
+| owner  | string |         | required, github username                                         |
+| repos  | string |         | required, github repos name                                       |
+| dir    | string |         | optional, upload directory, empty string means root dir. eg: sub/ |
+| branch | string | master  | optional, upload branch, by default is master branch              |
 
-| Key              | Type    | Default   | Description                                        |
-| ---------------- | ------- | --------- | -------------------------------------------------- |
-| base64Img        | string  |           | required                                           |
-| filename         | string  | eg: x.jpg | required                                           |
-| isPrefixWithHash | boolean | false     | optional, not prefix filename with hash by default |
+# IUploadOptions
+
+```typescript
+export type IUploadOptions = {
+  base64Img: string;
+  filename: string;
+  filenameHandler?: "hash" | "date" | ((filename: string) => string);
+};
+```
+
+| Key             | Type             | Default | Description                                                                                              |
+| --------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| base64Img       | string           |         | required                                                                                                 |
+| filename        | string           |         | required, eg: x.jpg                                                                                      |
+| filenameHandler | string, function |         | optional, "hash" or "date" will call inner built handler, you can pass custom handler by pass a function |
+
+# API
+
+## setBranch
+
+Change upload branch
+
+```
+const uploader = new GhImgUploader(options: IOptions);
+uploader.setBranch([branch])
+```
