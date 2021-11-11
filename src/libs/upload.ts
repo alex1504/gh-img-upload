@@ -172,6 +172,7 @@ export class GhImgUploader {
       }
     }
 
+    const encodeTargetFilename = encodeURIComponent(targetFilename);
     const data = {
       message: "Upload pictures via github-image-uploader",
       branch: this.branch,
@@ -179,7 +180,7 @@ export class GhImgUploader {
     };
 
     const res = await request<IUploadResponse>(
-      `${githubBaseURL}/repos/${this.owner}/${this.repos}/contents/${this.dir}${targetFilename}`,
+      `${githubBaseURL}/repos/${this.owner}/${this.repos}/contents/${this.dir}${encodeTargetFilename}`,
       {
         method: "PUT",
         data: this._getPayload(data),
