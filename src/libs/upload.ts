@@ -57,6 +57,12 @@ export enum ExternalLinkType {
   md_cdn = "MARKDOWN_CDN"
 }
 
+export type IUploadOptions = {
+  base64Img: string;
+  filename: string;
+  filenameHandler?: "hash" | "date" | ((filename: string) => string);
+};
+
 export class GhImgUploader {
   public token;
   public owner;
@@ -118,14 +124,53 @@ export class GhImgUploader {
     return this;
   }
 
-  public async upload(
-    base64Img: string,
-    filename: string,
-    isHashFilename = false
-  ) {
-    const targetFilename = isHashFilename
-      ? `${this.getMd5(filename)}-${filename}`
-      : filename;
+  private parseFilename(filename: string) {
+    const dotIndex = filename.lastIndexOf(".");
+    const fileBaseName = filename.slice(0, dotIndex);
+    const fileExt = filename.slice(dotIndex, filename.length);
+
+    return [fileBaseName, fileExt];
+  }
+
+  public filenameHashHandler(filename: string) {
+    const [fileBaseName, fileExt] = this.parseFilename(filename);
+    const uniqueRandomHash = this.getMd5(fileBaseName);
+
+    return uniqueRandomHash + fileExt;
+  }
+
+  public filenameDateHandler(filename: string) {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, "0");
+    const date = today.getDate().toString().padStart(2, "0");
+    const hours = today.getHours().toString().padStart(2, "0");
+    const minutes = today.getMinutes().toString().padStart(2, "0");
+    const seconds = today.getSeconds().toString().padStart(2, "0");
+
+    return (
+      year + month + date + "_" + hours + minutes + seconds + "_" + filename
+    );
+  }
+
+  public async upload(options: IUploadOptions) {
+    const { base64Img, filename, filenameHandler } = options;
+
+    const handlerMap = {
+      hash: this.filenameHashHandler,
+      date: this.filenameDateHandler
+    };
+
+    let targetFilename = filename;
+    if (typeof filenameHandler === "function") {
+      targetFilename = filenameHandler.call(this, filename);
+    } else if (typeof filenameHandler === "string") {
+      const handler = handlerMap[filenameHandler];
+
+      if (typeof handler === "function") {
+        targetFilename = handler.call(this, filename);
+      }
+    }
 
     const data = {
       message: "Upload pictures via github-image-uploader",
@@ -144,6 +189,10 @@ export class GhImgUploader {
         }
       }
     );
+
+    if (!res.content) {
+      return res;
+    }
 
     const content = res.content;
     const uploadRes = {
