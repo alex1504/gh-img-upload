@@ -67,7 +67,7 @@ export type IUploadOptions = {
 
 Change upload branch
 
-```
+```typescript
 const uploader = new GhImgUploader(options: IOptions);
 uploader.setBranch([branch])
 ```
