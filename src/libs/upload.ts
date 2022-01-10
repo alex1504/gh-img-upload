@@ -1,4 +1,4 @@
-import md5 from "md5";
+import { filenameDateHandler, filenameHashHandler } from "./handler";
 import { request } from "./request";
 
 const isBrowserEnv = typeof window !== "undefined";
@@ -51,10 +51,12 @@ export type IResponseContent = {
 };
 
 export enum ExternalLinkType {
-  gh = "GITHUB",
-  md_gh = "MARKDOWN_GITHUB",
-  cdn = "CDN",
-  md_cdn = "MARKDOWN_CDN"
+  github = "GITHUB",
+  githubMarkdown = "MARKDOWN_GITHUB",
+  githubHtml = "HTML_GITHUB",
+  jsdelivr = "CDN",
+  jsdelivrMarkdown = "MARKDOWN_CDN",
+  jsdelivrHtml = "HTML_CDN"
 }
 
 export type IUploadOptions = {
@@ -74,8 +76,21 @@ export class GhImgUploader {
     this.token = options.token;
     this.owner = options.owner;
     this.repos = options.repos;
-    this.dir = options.dir ? options.dir : "";
+    this.dir = this.handleDir(options.dir);
     this.branch = options.branch ? options.branch : "master";
+  }
+
+  private handleDir(dir: string | undefined) {
+    if (dir === "/" || !dir) {
+      return "";
+    }
+
+    const lastChar = dir.charAt(dir.length - 1);
+    if (lastChar !== "/") {
+      dir += "/";
+    }
+
+    return dir.replace(/^\/+/g, "").replace(/\/+/g, "/");
   }
 
   private getHandleFilename(filename: string) {
@@ -91,17 +106,27 @@ export class GhImgUploader {
     const cdnLink = `https://cdn.jsdelivr.net/gh/${this.owner}/${this.repos}@${this.branch}/${content.path}`;
 
     switch (type) {
-      case ExternalLinkType.gh:
+      case ExternalLinkType.github:
         return ghLink;
 
-      case ExternalLinkType.md_gh:
+      case ExternalLinkType.githubMarkdown:
         return `![${this.getHandleFilename(content.name)}](${ghLink})`;
 
-      case ExternalLinkType.cdn:
+      case ExternalLinkType.githubHtml:
+        return `<img src="${ghLink}" alt="${this.getHandleFilename(
+          content.name
+        )}">`;
+
+      case ExternalLinkType.jsdelivr:
         return cdnLink;
 
-      case ExternalLinkType.md_cdn:
+      case ExternalLinkType.jsdelivrMarkdown:
         return `![${this.getHandleFilename(content.name)}](${cdnLink})`;
+
+      case ExternalLinkType.jsdelivrHtml:
+        return `<img src="${cdnLink}" alt="${this.getHandleFilename(
+          content.name
+        )}">`;
     }
   }
 
@@ -111,54 +136,18 @@ export class GhImgUploader {
       : Buffer.from(JSON.stringify(data));
   }
 
-  private getMd5(filename: string): string {
-    return md5(
-      String(Math.floor(Math.random() * Math.pow(10, 9) + Date.now())) +
-        filename
-    );
-  }
-
   public setBranch(branch: string) {
     this.branch = branch;
 
     return this;
   }
 
-  private parseFilename(filename: string) {
-    const dotIndex = filename.lastIndexOf(".");
-    const fileBaseName = filename.slice(0, dotIndex);
-    const fileExt = filename.slice(dotIndex, filename.length);
-
-    return [fileBaseName, fileExt];
-  }
-
-  public filenameHashHandler(filename: string) {
-    const [fileBaseName, fileExt] = this.parseFilename(filename);
-    const uniqueRandomHash = this.getMd5(fileBaseName);
-
-    return uniqueRandomHash + fileExt;
-  }
-
-  public filenameDateHandler(filename: string) {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, "0");
-    const date = today.getDate().toString().padStart(2, "0");
-    const hours = today.getHours().toString().padStart(2, "0");
-    const minutes = today.getMinutes().toString().padStart(2, "0");
-    const seconds = today.getSeconds().toString().padStart(2, "0");
-
-    return (
-      year + month + date + "_" + hours + minutes + seconds + "_" + filename
-    );
-  }
-
   public async upload(options: IUploadOptions) {
     const { base64Img, filename, filenameHandler } = options;
 
     const handlerMap = {
-      hash: this.filenameHashHandler,
-      date: this.filenameDateHandler
+      hash: filenameHashHandler,
+      date: filenameDateHandler
     };
 
     let targetFilename = filename;
@@ -198,10 +187,27 @@ export class GhImgUploader {
     const content = res.content;
     const uploadRes = {
       raw: res,
-      ghLink: this.generateExternalLink(ExternalLinkType.gh, content),
-      mdGh: this.generateExternalLink(ExternalLinkType.md_gh, content),
-      cdnLink: this.generateExternalLink(ExternalLinkType.cdn, content),
-      mdCdn: this.generateExternalLink(ExternalLinkType.md_cdn, content)
+      githubRaw: this.generateExternalLink(ExternalLinkType.github, content),
+      githubMarkdown: this.generateExternalLink(
+        ExternalLinkType.githubMarkdown,
+        content
+      ),
+      githubHtml: this.generateExternalLink(
+        ExternalLinkType.githubHtml,
+        content
+      ),
+      jsdelivrRaw: this.generateExternalLink(
+        ExternalLinkType.jsdelivr,
+        content
+      ),
+      jsdelivrMarkdown: this.generateExternalLink(
+        ExternalLinkType.jsdelivrMarkdown,
+        content
+      ),
+      jsdelivrHtml: this.generateExternalLink(
+        ExternalLinkType.jsdelivrHtml,
+        content
+      )
     };
 
     return uploadRes;

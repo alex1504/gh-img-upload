@@ -13,7 +13,7 @@ npm i github-image-uploader
 ## with cdn
 
 ```js
-<script src="https://cdn.jsdelivr.net/npm/github-image-uploader@1.1.3/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/github-image-uploader@1.1.5/dist/index.min.js"></script>
 ```
 
 # Usage
@@ -60,14 +60,3 @@ export type IUploadOptions = {
 | base64Img       | string           |         | required                                                                                                 |
 | filename        | string           |         | required, eg: x.jpg                                                                                      |
 | filenameHandler | string, function |         | optional, "hash" or "date" will call inner built handler, you can pass custom handler by pass a function |
-
-# API
-
-## setBranch
-
-Change upload branch
-
-```typescript
-const uploader = new GhImgUploader(options: IOptions);
-uploader.setBranch([branch])
-```
